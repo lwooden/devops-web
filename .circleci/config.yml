@@ -1,0 +1,87 @@
+version: 2
+
+# Store defaults into reusable chunk
+defaults: &defaults
+  docker:
+    - image: jcolemorrison/circleci-node-awscli:latest
+  working_directory: ~/project # defaults to this
+
+jobs:
+  install:
+    <<: *defaults
+    steps: 
+      - checkout
+      - restore_cache:
+          keys:
+            - node-modules-{{ .Branch }}-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install
+          command: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: node-modules-{{ .Branch }}-{{ checksum "yarn.lock" }}
+      # Save the entire directory for the next step
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  test:
+    <<: *defaults
+    steps:
+      # attach the directory
+      - attach_workspace:
+          at: .
+      - run:
+          name: Test
+          command: yarn test
+
+
+  # New job to build down app to deploy to S3        
+  build: 
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Build
+          command: yarn build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  deploy:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Deploy
+          command: |
+            chmod +x ./deploy.sh
+            ./deploy.sh
+
+workflows:
+  version: 2
+  install_test_build_deploy:
+    jobs:
+      - install
+      - test:
+          requires:
+            - install
+      - build:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - staging
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - staging
