@@ -2,9 +2,11 @@
 
 set -e
 
-echo "Syncing S3 Bucket"
+echo "Syncing S3 Bucket w/ Local Directory"
 
-aws s3 sync --delete build/ s3://$AWS_S3_BUCKET
+# anything that exist in the S3 bucket but not in the local 
+# /build directory of the container will be deleted
+aws s3 sync build/ s3://$AWS_S3_BUCKET --delete 
 
 echo "Invalidating Cloudfront Distribution"
 
