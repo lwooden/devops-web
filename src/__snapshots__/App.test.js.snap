@@ -4,7 +4,7 @@ exports[`<App /> Snapshots should render the login form if no user is present 1`
 "<div className=\\"App\\">
   <form onSubmit={[Function]}>
     <h1>
-      An Awesome Form on React
+      An Awesome Form on React CircleCi
     </h1>
     <label htmlFor=\\"email\\">
       <span>
